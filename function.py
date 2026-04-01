@@ -57,8 +57,8 @@ def settings():
         
     while True:
         try:
-            li = input("Do you want to share your following, followers, or a custom list of sellers? (Enter 'following', 'followers', or 'custom'): ")
-            if li.lower() not in ['following', 'followers', 'custom']:
+            li = input("Do you want to share your following, followers, or a custom list of sellers? (Enter 'following', 'followers', 'custom', or 'party'): ")
+            if li.lower() not in ['following', 'followers', 'custom', 'party']:
                 raise ValueError("Invalid input. Please enter one of the available options.")
             else:
                 break
@@ -254,7 +254,7 @@ def share_custom(page):
     page = page
     for i in custom_list:
         i.strip()
-        page.goto(f"https://poshmark.ca/closet/{user}")
+        page.goto(f"https://poshmark.ca/closet/{i}")
         share_1user(page)
 
 
@@ -288,7 +288,144 @@ def share_1user(page):
             total_count += 1
             pass
     print('Finished sharing all items of this user')
+
+
+
+def self_to_party(page): #DOES NOT YET SUPPORT SIZE RESTRICTIONS
+    print('getting party info...')
+    global user
+    page.goto('https://poshmark.ca/parties')
+    current_party = '//ul[@class="party__list--current"]'
+    try:
+        page.locator(current_party).wait_for(timeout=5000)
+    except PlaywrightTimeoutError:
+        print('No current party available, come back later or share to your own followers!')
+        sys.exit(1)
+    brands = page.locator(current_party + '//span[@place="brands"]').inner_text().split(', ')
+    brands = list(map(str.lower,brands))
+    print(brands)
+    categories = page.locator(current_party + '//span[@place="categories"]').inner_text().split(', ')
+    categories = list(map(str.lower,categories))
+    print(categories)
+    # try:
+    #     page.locator(current_party + '//span[@place="sizes"]').wait_for(timeout=500)
+    #     sizes = page.locator(current_party + '//span[@place="sizes"]').inner_text().split(', ')
+    # except PlaywrightTimeoutError:
+    #     pass
     
+    page.goto(f"https://poshmark.ca/closet/{user}") #!
+
+    class partyer(object):
+        def __init__(self,page,brands,categories):
+            self.page = page
+            self.count = 0
+            self.last_item_count = 0
+            self.last_change_time = time.time()
+        def __iter__(self):
+            return self
+        def __next__(self):
+            self.details = page.locator('//div[@class="item__details"]')
+            self.items = self.page.locator('.share-gray-large')
+            self.share_button = self.items.nth(self.count)
+            self.total_items = int(self.page.locator('span[data-test="closet_listings_count"]').inner_text().replace(',',''))
+            
+            current_item_count = self.items.count()
+            current_time = time.time()
+            if current_item_count == self.last_item_count and current_time - self.last_change_time > 7:
+                print('Items not loading, manually scrolling to load more...')
+                self.page.evaluate('window.scrollTo(0,document.body.scrollHeight)')
+                self.page.wait_for_timeout(2000)
+                self.last_change_time = time.time()
+            
+            if current_item_count != self.last_item_count:
+                self.last_item_count = current_item_count
+                self.last_change_time = time.time()
+            
+            if self.count >= self.total_items-1:
+                print('No more items to share')
+                raise StopIteration
+            
+            self.current = self.details.nth(self.count)
+            list_brand = '//span[@data-et-name="listing_brand"]'
+            try:
+                self.current.locator(list_brand).wait_for(timeout=1000)
+                item_brand = self.current.locator(list_brand).inner_text().lower()
+                print(item_brand)
+            except PlaywrightTimeoutError:
+                print('no brand element detected')
+                item_brand = []
+                self.share_button.click()
+                self.page.locator('i.cross').click()
+                print('simulating click')
+
+            # list_size = '//span[@class="tile__details__pipe__size"]'
+            # try:
+            #     self.current.locator(list_size).wait_for(timeout=1000)
+            #     item_size = self.current.locator(list_size).inner_text().lower()
+            # except PlaywrightTimeoutError:
+            #     print('no size detected')
+            #     item_size = []
+            title_element = self.current.locator('div.title__condition__container a.tile__title').inner_text().split(' ')
+            title_element = list(map(str.lower,title_element))
+            print(title_element)
+
+            #only if visible
+
+            if brands[0] == 'all' and categories[0] == 'all':
+                share_1user(page)
+
+            elif categories[0] == 'all':
+                if item_brand in brands or any(word in brands for word in title_element):
+                    
+                    self.share_button.click(delay=500)
+                    # self.page.locator('i.cross').click(delay=1000)
+                    self.page.locator('//li[@class="internal-share"]/a[page,@data-et-name="share_to_party"]').click(delay=1000)
+                    print('shared to party!')
+                else:
+                    print('cannot share')
+                    # if self.count%15 == 0:
+                    #     self.share_button.click(delay=500)
+                    #     self.page.locator('i.cross').click(delay=1000)
+                    #     print('simulating click')
+
+            elif brands[0] == 'all':
+                if any(word in categories for word in title_element):
+                    self.share_button = self.items.nth(self.count)
+                    self.share_button.click(delay=500)
+                    # self.page.locator('i.cross').click(delay=1000)
+                    self.page.locator('//li[@class="internal-share"]/a[page,@data-et-name="share_to_party"]').click(delay=1000)
+                    print('shared to party!')
+                else:
+                    print('cannot share')
+                    # if self.count%15 == 0:
+                    #     self.share_button.click(delay=500)
+                    #     self.page.locator('i.cross').click(delay=1000)
+                    #     print('simulating click')
+
+
+
+            elif (item_brand in brands or any(word in brands for word in title_element)) and any(word in categories for word in title_element):
+                self.share_button = self.items.nth(self.count)
+                self.share_button.click(delay=500)
+                # self.page.locator('i.cross').click(delay=1000)
+                self.page.locator('//li[@class="internal-share"]/a[@data-et-name="share_to_party"]').click(delay=1000)
+                print('shared to party!')
+            else:
+                print('cannot share')
+                # if self.count%15 == 0:
+                #     self.share_button.click(delay=500)
+                #     self.page.locator('i.cross').click(delay=1000)
+                #     print('simulating click')
+
+            
+            self.count+=1
+            print('next item')
+        
+    party = partyer(page,brands,categories)
+    for i in party:
+        pass
+        
+
 
 def close_browser(browser, p):
     global total_count

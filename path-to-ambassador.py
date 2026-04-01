@@ -1,7 +1,6 @@
 import function
 
 
-
 function.day_limit()
 function.initialize()
 
@@ -20,6 +19,8 @@ try:
             function.navigate_to_followers(page)
         elif function.setting['li'] == 'custom':
             function.share_custom(page)
+        elif function.setting['li'] == 'party':
+            function.self_to_party(page)
         
         else:
             print('Something went wrong with the settings. Please delete the settings.json file and try again.')

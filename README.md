@@ -4,10 +4,10 @@ This is a tool that automates listing sharing for your Poshmark marketplace acco
 The tool can currently share the listings of your following or followers.
 
 # Quick start
-Requirements: Chrome, a computer
+Requirements: Chrome, a computer that can run executables.
 No need to install extra packages, simply download the dist folder and run the .exe file.
 
-Simply download the dist folder to your computer, then run the path-to-ambassador.exe file.
+Click on the dist folder -> click on path-to-ambassador.exe -> on the top right, click on "Download raw code" -> save and run!
 
 Be sure to interact with the program only through the control panel, unless a reCAPTCHA is triggered.
 

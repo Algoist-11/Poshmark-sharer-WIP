@@ -7,7 +7,7 @@ function.initialize()
 
 UA_LIST = function.generate_ua()
 
-browser, page, p = function.open_stealth(UA_LIST,function.setting['path'])
+browser, page, p = function.open_stealth(UA_LIST,'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe')
 
 function.login(page)
 

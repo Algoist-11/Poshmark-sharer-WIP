@@ -10,6 +10,8 @@ import time
 #add when verification code is wrong
 #maybe release async version in the future
 
+setting = None
+
 def day_limit():
     global total_count
     if not pathlib.Path('time.json').exists() or pathlib.Path('time.json').stat().st_size == 0:
@@ -250,7 +252,8 @@ def navigate_to_followers(page):
         pass
 
 def share_custom(page):
-    custom_list = tuple(set(input('Please enter the list of users for whom you would like to share their closets (be sure to use USERNAME and NOT email, each one separated by a comma), you can enter your own username to self-share as well: ').split(',')))
+    custom_list = input('Please enter the list of users for whom you would like to share their closets (be sure to use USERNAME and NOT email, each one separated by a comma), you can enter your own username to self-share as well: ').split(',')
+    custom_list = tuple(set(custom_list))
     page = page
     for i in custom_list:
         i.strip()
@@ -276,7 +279,9 @@ def share_1user(page):
             # print('items count:',self.items.count()-1)
             
             self.current.click(delay=500)
-            self.page.locator('//li[@class="internal-share"]/a[@data-et-name="share_poshmark"]').click(delay=1000)
+            # self.page.locator('//li[@class="internal-share"]/a[@data-et-name="share_poshmark"]').click(delay=1000)
+            self.page.locator('//li[@class="internal-share"]/a[page,@data-et-name="share_to_party"]').click(delay=1000)
+
             self.count+=1
 
     
@@ -331,7 +336,7 @@ def self_to_party(page): #DOES NOT YET SUPPORT SIZE RESTRICTIONS
             
             current_item_count = self.items.count()
             current_time = time.time()
-            if current_item_count == self.last_item_count and current_time - self.last_change_time > 7:
+            if current_item_count == self.last_item_count and current_time - self.last_change_time > 20:
                 print('Items not loading, manually scrolling to load more...')
                 self.page.evaluate('window.scrollTo(0,document.body.scrollHeight)')
                 self.page.wait_for_timeout(2000)
@@ -372,7 +377,9 @@ def self_to_party(page): #DOES NOT YET SUPPORT SIZE RESTRICTIONS
             #only if visible
 
             if brands[0] == 'all' and categories[0] == 'all':
-                share_1user(page)
+                self.share_button.click(delay=500)
+                # self.page.locator('i.cross').click(delay=1000)
+                self.page.locator('//li[@class="internal-share"]/a[@data-et-name="share_to_party"]').click(delay=1000)
 
             elif categories[0] == 'all':
                 if item_brand in brands or any(word in brands for word in title_element):
